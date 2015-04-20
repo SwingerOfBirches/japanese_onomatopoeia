@@ -9,6 +9,9 @@
 # 5. Find inner long vowels
 # 6. Mixed roots
 # 7. Exceptions like　こけこっこ
+# 8. Triple base repetition like ははは　or はっはっは
+# 9. What if they end in 'to' (not 'tto') 
+#    Regex if to x 2 ?
 
 import romkan
 import re
@@ -88,8 +91,8 @@ def ending():
 
     elif onoma.endswith('ri'):
         descriptors['ending']= 'ri'
+        repetition()
         onoma = onoma[:-2]
-        # for a hypothetical /kirakirari/. Check if this pattern exists
         repetition()
     
     elif onoma.endswith('-'):
@@ -144,7 +147,7 @@ def syllabic_n():
          print('INFO')
          for i in descriptors: print(i + ': ' + str(descriptors[i]))
     
-     elif re.search(m, onoma, re.I):
+    elif re.search(m, onoma, re.I):
          descriptors['syllabic n'] = True
          x = re.finditer(m, onoma, re.I)
          for match in x:
@@ -158,6 +161,7 @@ def syllabic_n():
     
 def analyzer(input):
     strings(input)
+    repetition()
     ending()
     geminates()
     syllabic_n()
@@ -169,3 +173,4 @@ def analyzer(input):
     print('********')
         
 
+        repetition()
