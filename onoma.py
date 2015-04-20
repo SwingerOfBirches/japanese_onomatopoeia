@@ -3,18 +3,21 @@
 # 2. Do all the removal at once or step by step.
 #    Step by step
 # 3. Find inner geminates
-#    !!!! When looking for inner geminates: make lowercase
+#    DONE
 # 4. Find inner nasals (n+ consonant, n')
+#    DONE
 # 5. Find inner long vowels
 # 6. Mixed roots
 # 7. Exceptions like　こけこっこ
 
 import romkan
+import re
 
 
 b = ['じゃんじゃん','じゃじゃん','じゅん','じゃーんじゃーん',\
      'じゃじゃーん','ぴったっと','きらきらり','がっちゃっ',"しゃーしゃー",\
-     'きらきら','ごろごろ','ぽいぽい','きゃー']
+     'きらきら','ごろごろ','ぽいぽい','きゃー','ぽん','ぱっ','ぼっさぼっさ',\
+'ひんやり','ふんわり'] 
 
 # Onomatopoeia strings
 raw = ''
@@ -23,7 +26,7 @@ katakana = ''
 hepburn = ''
 kunrei = ''
 onoma = ''
-root = ''
+
 
 # create the necessary strings
 def strings(input):
@@ -50,85 +53,120 @@ def strings(input):
     return(hiragana + ' ' + katakana + ' ' + hepburn + ' ' + onoma)
 
 
+# looking for base repetition
 
 
+descriptors = {}
+
+
+def repetition():
+    global onoma
+    global descriptors
+    if onoma[len(onoma)//2:] == onoma[:len(onoma)//2]:
+             descriptors['base repetition']=True
+             onoma = onoma[:len(onoma)//2]
+             return True
+
+    
 
 # Find word ending (vowel -short, long, diphthong-, "-n", "ri", stop)
 # and check for base repetition
 
-descriptors = {}
-  
-
-def ending(input=onoma, base=root):
+def ending():
     
-    global root
-    root = onoma
+    global onoma
+    onoma = onoma
     global descriptors
     descriptors = {}
     vowels = ['a','e','i', 'o','u']
 
     if onoma.endswith('n') or onoma.endswith('Q'):
         descriptors['ending']= onoma[-1]
-        if root[:len(root)//2] == root[len(root)//2:]:
-            descriptors['base repetition']=True
-            root = root[:len(root)//2-1]           
-        else:
-            root = root[:-1]
-            if root[len(root)//2:] == root[:len(root)//2]:
-                descriptors['base repetition']=True
-                root = root[len(root)//2:]
-            else:
-                root = root[:len(onoma)-1]
-        print('Onomatopoeia: ' + raw)
-        print('Base: ' + root)
-        print('Info')
-        for i in descriptors: print(i + ': ' + str(descriptors[i]))
-        
+        repetition()
+        onoma = onoma[:-1]          
+        repetition()
+
     elif onoma.endswith('ri'):
         descriptors['ending']= 'ri'
-        root = root[:-2]
+        onoma = onoma[:-2]
         # for a hypothetical /kirakirari/. Check if this pattern exists
-        if root[len(root)//2:] == root[:len(root)//2]:
-            descriptors['base repetition']=True
-            root = root[len(root)//2:]
-        print('Onomatopoeia: ' + raw)
-        print('Base: ' + root)
-        print('Info')
-        for i in descriptors: print(i + ': ' + str(descriptors[i]))
+        repetition()
     
     elif onoma.endswith('-'):
         descriptors['ending']= 'vowel, long'
-        if root[len(root)//2:] == root[:len(root)//2]:
-            descriptors['base repetition']=True
-            root = root[:len(root)//2-1]
+        if repetition() is True:
+            pass
         else:
-            root = root[:-1]
-        print('Onomatopoeia: ' + raw)
-        print('Base: ' + root)
-        print('Info')
-        for i in descriptors: print(i + ': ' + str(descriptors[i]))
+            onoma = onoma[:-1]
 
     elif onoma[-1] in vowels:
         if onoma[-2] in vowels:
             descriptors['ending']= 'vowel, diphthong'
-            if root[len(root)//2:] == root[:len(root)//2]:
-                descriptors['base repetition']=True
-                root = root[:len(root)//2]
+            repetition()
         else:
             descriptors['ending']= 'vowel, short'
-            if root[len(root)//2:] == root[:len(root)//2]:
-                descriptors['base repetition']=True
-                root = root[:len(root)//2]
-        print('Onomatopoeia: ' + raw)
-        print('Base: ' + root)
-        print('Info')
-        for i in descriptors: print(i + ': ' + str(descriptors[i]))
-    else:
-        print('This does not seem to be an onomatopoeia.')
+            repetition()
 
+def geminates():
+    rep = r'(.)\1{1,}'
+    global onoma
+    global descriptors
+    if re.search(rep,onoma,re.I):
+        descriptors['inner Q'] = True
+        geminates = ['kk','tt', 'pp','mm', 'nn', \
+'ss', 'bb', 'dd', 'ff', 'gg', 'hh', 'jj','zz','rr']
+        for gem in geminates:
+            x = re.finditer(gem, onoma, re.I)
+            for match in x:
+                pos = match.span()
+                onoma = onoma[:pos[0]] + onoma[pos[1]-1:]
+                  
+        repetition()
+        
+
+def syllabic_n():
+    global onoma
+    global descriptors
+    n = r'n[^a,e,i,o,u,\']'
+    m = r'n\''
+    if re.search(n, onoma, re.I):
+         descriptors['syllabic n'] = True
+         x = re.finditer(n, onoma, re.I)
+         for match in x:
+             pos = match.span()
+             onoma = onoma[:pos[0]] + onoma[pos[1]-1:]
+    
+         repetition()
+
+         print('AFTER SYLLABIC NASAL')
+         print('Base: ' + onoma)
+         print('INFO')
+         for i in descriptors: print(i + ': ' + str(descriptors[i]))
+    elif re.search(m, onoma, re.I):
+         descriptors['syllabic n'] = True
+         x = re.finditer(m, onoma, re.I)
+         for match in x:
+             pos = match.span()
+             onoma = onoma[:pos[0]] + onoma[pos[1]:]
+    
+         repetition()
+
+
+
+        
+           
+       
    
 def analyzer(input):
     strings(input)
     ending()
-
+    geminates()
+    syllabic_n()
+    print('Onomatopoeia: ' + raw)
+    print('Base: ' + onoma)
+    print('INFO')
+    for i in descriptors: 
+        print(i + ': ' + str(descriptors[i]))
+    print('********')
+        
 
