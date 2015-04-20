@@ -129,6 +129,7 @@ def syllabic_n():
     global descriptors
     n = r'n[^a,e,i,o,u,\']'
     m = r'n\''
+
     if re.search(n, onoma, re.I):
          descriptors['syllabic n'] = True
          x = re.finditer(n, onoma, re.I)
@@ -142,7 +143,8 @@ def syllabic_n():
          print('Base: ' + onoma)
          print('INFO')
          for i in descriptors: print(i + ': ' + str(descriptors[i]))
-    elif re.search(m, onoma, re.I):
+    
+     elif re.search(m, onoma, re.I):
          descriptors['syllabic n'] = True
          x = re.finditer(m, onoma, re.I)
          for match in x:
@@ -153,10 +155,7 @@ def syllabic_n():
 
 
 
-        
-           
-       
-   
+    
 def analyzer(input):
     strings(input)
     ending()
