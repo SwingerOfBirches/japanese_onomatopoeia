@@ -20,10 +20,10 @@ import romkan
 import re
 
 # I'm using this to test
-b = ['じゃんじゃん','じゃじゃん','じゅん','じゃーんじゃーん',\
-     'じゃじゃーん','ぴったっと','きらきらり','がっちゃっ',"しゃーしゃー",\
-     'きらきら','ごろごろ','ぽいぽい','きゃー','ぽん','ぱっ','ぼっさぼっさ',\
-     'ひんやり','ふんわり'] 
+b = ['ははは','あははは','はっはっは','はっはっはっ','じゃんじゃん','じゃじゃん','じゅん',\
+     'じゃーん  じゃーん', 'じゃじゃーん','ぴったっと','きらきらり','がっちゃっ',\
+     "しゃーしゃー", 'きらきら','ごろごろ','ぽいぽい','きゃー','ぽん','ぱっ',\
+     'ぼっさぼっさ', 'ひんやり','ふんわり'] 
 
 # Onomatopoeia strings
 raw = ''
@@ -73,7 +73,38 @@ def repetition():
              onoma = onoma[:len(onoma)//2]
              return True
 
-    
+
+# check for triple repetition at the beginning
+#  not happy with this
+
+def triple_rep():
+    global onoma
+    global descriptors
+    pattern = r'(..)\1{2,}$' # searching from the beginning, just in case there's prefixation
+    pattern2 = r'^(..)\1{2,}'
+    if re.search(pattern, onoma):
+        descriptors['base repetition'] = True
+        rep = re.search(pattern,onoma)
+        pos = rep.span()
+        base = rep.group(1)
+        if not base[0] == onoma[0]:
+            descriptors['prefix'] = onoma[:pos[0]]
+        onoma = base
+    elif re.search(pattern2, onoma):
+        descriptors['base repetition'] = True
+        rep = re.search(pattern2,onoma)
+        onoma = rep.group(1)
+
+# final check
+def f_triple():
+    global onoma
+    global descriptors
+    if not len(onoma)%3: # checking if length of onoma is divisible by 3
+       l = len(onoma)//3
+       if onoma[:l] == onoma[l:l*2] == onoma[l*2:]:
+           descriptors['base repetition'] = True
+           onoma = onoma[:l]     
+            
 
 # Find word ending (vowel -short, long, diphthong-, "-n", "ri", stop)
 # and check for base repetition
@@ -116,7 +147,7 @@ def geminates():
     global onoma
     global descriptors
     if re.search(rep,onoma,re.I):
-        descriptors['inner Q'] = True
+        descriptors['base split by Q'] = True
         geminates = ['kk','tt', 'pp','mm', 'nn', \
 'ss', 'bb', 'dd', 'ff', 'gg', 'hh', 'jj','zz','rr']
         for gem in geminates:
@@ -135,7 +166,7 @@ def syllabic_n():
     m = r'n\''
 
     if re.search(n, onoma, re.I):
-         descriptors['syllabic n'] = True
+         descriptors['base split by n'] = True
          x = re.finditer(n, onoma, re.I)
          for match in x:
              pos = match.span()
@@ -144,7 +175,7 @@ def syllabic_n():
          repetition()
     
     elif re.search(m, onoma, re.I):
-         descriptors['syllabic n'] = True
+         descriptors['base split by n'] = True
          x = re.finditer(m, onoma, re.I)
          for match in x:
              pos = match.span()
@@ -164,18 +195,18 @@ def long_vowel():
 
 def analyzer(input):
     global descriptors
-    descriptors = {'base repetition': False, 'ending':'','inner Q': False, 'syllabic n':False, 'inner long vowel':False}
+    descriptors = {'base repetition': False, 'ending':'','base split by Q': False, 'base split by n':False, 'inner long vowel':False, 'prefix':False}
     strings(input)
+    triple_rep()
     repetition()
     ending()
     geminates()
     syllabic_n()
     long_vowel()
+    f_triple()
     print('Onomatopoeia: ' + raw)
     print('Base: ' + onoma)
     print('INFO')
     for i in descriptors: 
         print(i + ': ' + str(descriptors[i]))
     print('********')
-        
-
