@@ -9,18 +9,21 @@
 # 5. Find inner long vowels
 # 6. Mixed roots
 # 7. Exceptions like　こけこっこ
-# 8. Triple base repetition like ははは　or はっはっは
+# 8. Triple base repetition like ははは -> (..)\1{2,}
+#　 はっはっは　lo mismo después de quitar Q
+#    あははは　lo mismo?
 # 9. What if they end in 'to' (not 'tto') 
-#    Regex if to x 2 ?
+#    Does this possibility exist?
+
 
 import romkan
 import re
 
-
+# I'm using this to test
 b = ['じゃんじゃん','じゃじゃん','じゅん','じゃーんじゃーん',\
      'じゃじゃーん','ぴったっと','きらきらり','がっちゃっ',"しゃーしゃー",\
      'きらきら','ごろごろ','ぽいぽい','きゃー','ぽん','ぱっ','ぼっさぼっさ',\
-'ひんやり','ふんわり'] 
+     'ひんやり','ふんわり'] 
 
 # Onomatopoeia strings
 raw = ''
@@ -78,9 +81,7 @@ def repetition():
 def ending():
     
     global onoma
-    onoma = onoma
     global descriptors
-    descriptors = {}
     vowels = ['a','e','i', 'o','u']
 
     if onoma.endswith('n') or onoma.endswith('Q'):
@@ -141,11 +142,6 @@ def syllabic_n():
              onoma = onoma[:pos[0]] + onoma[pos[1]-1:]
     
          repetition()
-
-         print('AFTER SYLLABIC NASAL')
-         print('Base: ' + onoma)
-         print('INFO')
-         for i in descriptors: print(i + ': ' + str(descriptors[i]))
     
     elif re.search(m, onoma, re.I):
          descriptors['syllabic n'] = True
@@ -156,15 +152,25 @@ def syllabic_n():
     
          repetition()
 
+def long_vowel():
+    global onoma
+    global descriptors
+    if '-' in onoma:
+        descriptors['inner long vowel'] = True
+        onoma = onoma.replace('-','')
+
+        repetition()
 
 
-    
 def analyzer(input):
+    global descriptors
+    descriptors = {'base repetition': False, 'ending':'','inner Q': False, 'syllabic n':False, 'inner long vowel':False}
     strings(input)
     repetition()
     ending()
     geminates()
     syllabic_n()
+    long_vowel()
     print('Onomatopoeia: ' + raw)
     print('Base: ' + onoma)
     print('INFO')
@@ -173,4 +179,3 @@ def analyzer(input):
     print('********')
         
 
-        repetition()
